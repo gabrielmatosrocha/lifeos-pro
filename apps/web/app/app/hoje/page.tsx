@@ -1,6 +1,10 @@
+"use client";
+
+import { motion } from "framer-motion";
 import { demoActions } from '@/features/demo/demo-data'
 import { runLifeEngine } from '@/features/life-engine/services/life-engine.service'
 import StatCard from '@/components/ui/StatCard'
+import MiniStat from "@/components/ui/MiniStat"
 const week = [
   { day: 'Seg', value: 42 },
   { day: 'Ter', value: 58 },
@@ -22,7 +26,13 @@ export default function HojePage() {
   const summary = runLifeEngine(demoActions)
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#09090B] px-4 pb-48 pt-6 text-white">
+    <motion.main
+    initial={{ opacity: 0, y: 25 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{
+        duration: 0.7,
+        ease: "easeOut",
+    }} className="min-h-screen overflow-hidden bg-[#09090B] px-4 pb-48 pt-6 text-white">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(10,132,255,0.22),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(48,209,88,0.12),transparent_35%)]" />
 
       <div className="relative mx-auto max-w-5xl space-y-6">
@@ -47,8 +57,28 @@ export default function HojePage() {
   value={String(summary.rhythmIndex)}
   subtitle={`${summary.classification} • ${summary.insight}`}
 />
+<section className="grid gap-5 md:grid-cols-4">
 
-        <section className="grid gap-6 lg:grid-cols-2">
+  <MiniStat icon="💧" title="Água" value="2 L" color="from-cyan-500 to-sky-500" delay={0.15} />
+<MiniStat icon="📖" title="Palavra" value="5 min" color="from-amber-500 to-orange-500" delay={0.25} />
+<MiniStat icon="📚" title="Estudo" value="60 min" color="from-violet-500 to-fuchsia-500" delay={0.35} />
+<MiniStat icon="🙏" title="Gratidão" value="Hoje" color="from-emerald-500 to-lime-500" delay={0.45} />
+
+</section>
+
+        <motion.section
+    initial={{
+        opacity:0,
+        scale:.96
+    }}
+    animate={{
+        opacity:1,
+        scale:1
+    }}
+    transition={{
+        delay:.15,
+        duration:.55
+    }} className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-[32px] border border-white/10 bg-zinc-900/80 p-5 shadow-xl shadow-black/20 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Missão do dia</h2>
@@ -101,7 +131,7 @@ export default function HojePage() {
               ))}
             </div>
           </div>
-        </section>
+        </motion.section>
 
         <section className="rounded-[32px] border border-white/10 bg-zinc-900/80 p-5 shadow-xl shadow-black/20 backdrop-blur-xl">
           <h2 className="text-xl font-bold">Pilares</h2>
@@ -124,6 +154,6 @@ export default function HojePage() {
           </div>
         </section>
       </div>
-    </main>
+    </motion.main>
   )
 }
