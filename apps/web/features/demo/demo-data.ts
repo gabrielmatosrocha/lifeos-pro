@@ -1,0 +1,40 @@
+import type { LifeAction } from '@/features/actions/types/action.types'
+
+export const demoActions: LifeAction[] = [
+  {
+    id: '1',
+    user_id: 'demo',
+    type: 'BIBLE_READING',
+    pillar: 'Fé',
+    title: 'Palavra',
+    value: 1,
+    unit: 'check',
+    occurred_at: new Date().toISOString(),
+    source: 'demo',
+    notes: null,
+  },
+  {
+    id: '2',
+    user_id: 'demo',
+    type: 'WATER_LOGGED',
+    pillar: 'Saúde',
+    title: 'Água',
+    value: 500,
+    unit: 'ml',
+    occurred_at: new Date().toISOString(),
+    source: 'demo',
+    notes: null,
+  },
+  {
+    id: '3',
+    user_id: 'demo',
+    type: 'STUDY_SESSION',
+    pillar: 'Conhecimento',
+    title: 'Estudo',
+    value: 60,
+    unit: 'min',
+    occurred_at: new Date().toISOString(),
+    source: 'demo',
+    notes: null,
+  },
+]
