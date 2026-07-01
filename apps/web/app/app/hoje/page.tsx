@@ -1,5 +1,5 @@
 "use client";
-
+import BackgroundGlow from "@/components/layout/BackgroundGlow";
 import { motion } from "framer-motion";
 import { demoActions } from '@/features/demo/demo-data'
 import { runLifeEngine } from '@/features/life-engine/services/life-engine.service'
@@ -33,8 +33,8 @@ export default function HojePage() {
         duration: 0.7,
         ease: "easeOut",
     }} className="min-h-screen overflow-hidden bg-[#09090B] px-4 pb-48 pt-6 text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(10,132,255,0.22),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(48,209,88,0.12),transparent_35%)]" />
-
+      
+<BackgroundGlow />
       <div className="relative mx-auto max-w-5xl space-y-6">
         <header className="flex items-center justify-between">
           <div>
