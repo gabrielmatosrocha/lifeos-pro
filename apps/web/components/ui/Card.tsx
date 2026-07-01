@@ -1,15 +1,28 @@
-export function Card({
-  children,
-  className = '',
-}: {
-  children: React.ReactNode
-  className?: string
-}) {
+import { ReactNode } from "react";
+
+type Props = {
+  children: ReactNode;
+  className?: string;
+};
+
+export default function Card({ children, className = "" }: Props) {
   return (
-    <section
-      className={`rounded-[28px] border border-white/10 bg-zinc-900/80 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl ${className}`}
+    <div
+      className={`
+      rounded-3xl
+      border
+      border-white/10
+      bg-white/[0.03]
+      backdrop-blur-xl
+      shadow-[0_20px_60px_rgba(0,0,0,.35)]
+      transition-all
+      duration-300
+      hover:scale-[1.01]
+      hover:border-cyan-400/30
+      ${className}
+      `}
     >
       {children}
-    </section>
-  )
+    </div>
+  );
 }

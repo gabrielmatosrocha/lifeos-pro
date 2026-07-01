@@ -1,6 +1,6 @@
 import { demoActions } from '@/features/demo/demo-data'
 import { runLifeEngine } from '@/features/life-engine/services/life-engine.service'
-
+import StatCard from '@/components/ui/StatCard'
 const week = [
   { day: 'Seg', value: 42 },
   { day: 'Ter', value: 58 },
@@ -42,40 +42,11 @@ export default function HojePage() {
           </div>
         </header>
 
-        <section className="rounded-[36px] border border-white/10 bg-white/[0.08] p-6 shadow-2xl shadow-black/40 backdrop-blur-2xl">
-          <div className="flex items-start justify-between gap-6">
-            <div>
-              <p className="text-sm text-zinc-400">Life Score</p>
-              <div className="mt-3 flex items-end gap-3">
-                <p className="text-7xl font-bold tracking-tight">
-                  {summary.rhythmIndex}
-                </p>
-                <span className="mb-3 rounded-full bg-emerald-500/15 px-3 py-1 text-sm font-semibold text-emerald-300">
-                  +12%
-                </span>
-              </div>
-              <p className="mt-2 text-lg text-zinc-300">
-                {summary.classification}
-              </p>
-            </div>
-
-            <div className="text-right">
-              <p className="text-sm text-zinc-400">Índice interno</p>
-              <p className="mt-2 text-3xl font-bold">{summary.lifeScore}</p>
-            </div>
-          </div>
-
-          <div className="mt-6 h-3 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-emerald-400"
-              style={{ width: `${summary.rhythmIndex}%` }}
-            />
-          </div>
-
-          <p className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
-            {summary.insight}
-          </p>
-        </section>
+       <StatCard
+  title="Life Score"
+  value={String(summary.rhythmIndex)}
+  subtitle={`${summary.classification} • ${summary.insight}`}
+/>
 
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-[32px] border border-white/10 bg-zinc-900/80 p-5 shadow-xl shadow-black/20 backdrop-blur-xl">

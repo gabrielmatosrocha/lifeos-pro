@@ -1,9 +1,31 @@
-export function Progress({ value }: { value: number }) {
-  const safeValue = Math.max(0, Math.min(100, value))
+type Props = {
+value:number;
+};
 
-  return (
-    <div className="h-2 rounded-full bg-slate-100">
-      <div className="h-2 rounded-full bg-blue-600" style={{ width: `${safeValue}%` }} />
-    </div>
-  )
+export default function Progress({value}:Props){
+
+return(
+
+<div className="w-full h-3 rounded-full bg-white/10 overflow-hidden">
+
+<div
+
+className="
+h-full
+rounded-full
+bg-gradient-to-r
+from-cyan-400
+to-green-400
+transition-all
+duration-700
+"
+
+style={{width:`${value}%`}}
+
+/>
+
+</div>
+
+)
+
 }
