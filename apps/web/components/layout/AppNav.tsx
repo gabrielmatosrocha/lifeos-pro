@@ -11,7 +11,7 @@ const items = [
 
 export function AppNav() {
   return (
-    <nav className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-[28px] border border-white/10 bg-zinc-900/70 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-2xl">
+    <nav className="fixed bottom-6 left-4 right-4 z-50 mx-auto max-w-md rounded-[28px] border border-white/10 bg-zinc-900/70 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-2xl">
       <div className="grid grid-cols-5 text-center">
         {items.map((item) => {
           const Icon = item.icon
