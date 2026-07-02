@@ -1,13 +1,6 @@
-export type Pillar =
-  | 'Fé'
-  | 'Saúde'
-  | 'Mente'
-  | 'Conhecimento'
-  | 'Finanças'
-  | 'Propósito'
-  | 'Consistência'
+import type { Pillar } from '@/features/actions/types/action.types'
 
-export type LifeAction = {
+export type DailyActionRecord = {
   id: string
   user_id: string
   type: string
@@ -18,6 +11,7 @@ export type LifeAction = {
   occurred_at: string
   source: string
   notes: string | null
+  created_at?: string
   status?: 'completed' | 'pending'
   category?: Pillar
 }

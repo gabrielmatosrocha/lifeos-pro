@@ -2,7 +2,7 @@ type Props = {
 value:number;
 };
 
-export default function Progress({value}:Props){
+export function Progress({value}:Props){
 
 return(
 
@@ -29,3 +29,5 @@ style={{width:`${value}%`}}
 )
 
 }
+
+export default Progress;

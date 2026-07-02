@@ -1,0 +1,12 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd c:/Users/Gabriel Matos/Downloads/lifeos-pro-alpha-1-0/apps/web ; npm run lint$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd \"c:/Users/Gabriel Matos/Downloads/lifeos-pro-alpha-1-0/apps/web\"; npm run lint$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

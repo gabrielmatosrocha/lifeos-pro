@@ -1,6 +1,28 @@
+"use client"
+
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/Card'
+import { getCurrentUser, signOut } from '@/features/auth/services/auth.service'
 
 export default function PerfilPage() {
+  const router = useRouter()
+  const [userEmail, setUserEmail] = useState('')
+
+  useEffect(() => {
+    async function loadUser() {
+      const user = await getCurrentUser()
+      setUserEmail(user?.email ?? '')
+    }
+
+    void loadUser()
+  }, [])
+
+  async function handleLogout() {
+    await signOut()
+    router.replace('/login')
+  }
+
   return (
     <main className="mx-auto max-w-3xl space-y-5 px-4 py-6">
       <header>
@@ -10,15 +32,14 @@ export default function PerfilPage() {
 
       <Card>
         <p className="text-sm text-slate-500">Usuário</p>
-        <h2 className="mt-1 text-xl font-bold">Gabriel Matos</h2>
+        <h2 className="mt-1 text-xl font-bold">{userEmail || 'Usuário autenticado'}</h2>
         <p className="mt-1 text-slate-500">Disciplina • Fé • Evolução</p>
       </Card>
 
       <Card>
-        <h2 className="text-xl font-bold">Alpha 1.0</h2>
-        <p className="mt-2 text-slate-600">
-          Esta é a primeira versão consolidada do LifeOS Pro.
-        </p>
+        <button type="button" onClick={() => void handleLogout()} className="w-full rounded-xl bg-rose-600 px-4 py-3 font-semibold text-white">
+          Sair da conta
+        </button>
       </Card>
     </main>
   )
