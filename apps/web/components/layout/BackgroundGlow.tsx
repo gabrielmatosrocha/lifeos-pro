@@ -3,34 +3,8 @@
 export default function BackgroundGlow() {
   return (
     <>
-      <div className="pointer-events-none fixed inset-0">
-
-        <div
-          className="
-          absolute
-          -left-40
-          -top-40
-          h-[520px]
-          w-[520px]
-          rounded-full
-          bg-sky-500/20
-          blur-[160px]
-        "
-        />
-
-        <div
-          className="
-          absolute
-          right-[-150px]
-          bottom-[-150px]
-          h-[520px]
-          w-[520px]
-          rounded-full
-          bg-emerald-500/15
-          blur-[180px]
-        "
-        />
-
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(80%_60%_at_18%_0%,rgba(34,211,238,.16),transparent_58%),radial-gradient(70%_55%_at_92%_100%,rgba(16,185,129,.12),transparent_55%),linear-gradient(180deg,rgba(255,255,255,.025),transparent_36%)]">
+        <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,.035)_42%,transparent_58%)] opacity-60" />
       </div>
     </>
   );

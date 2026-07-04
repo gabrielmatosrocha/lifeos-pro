@@ -1,11 +1,14 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import BackgroundGlow from '@/components/layout/BackgroundGlow'
+import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
+import { BookOpen, CheckCircle2, Droplets, GraduationCap, Heart, Plus, Sparkles, Trash2 } from 'lucide-react'
 import HeroScore from '@/components/dashboard/HeroScore'
 import MiniStat from '@/components/ui/MiniStat'
 import Button from '@/components/ui/Button'
+import FeedbackState from '@/components/ui/FeedbackState'
+import { fieldClassName, insetSurfaceClassName, panelSurfaceClassName, selectFieldClassName } from '@/components/ui/fieldStyles'
 import { demoActions } from '@/features/demo/demo-data'
 import { createDailyAction, loadDailyActions, persistDailyActions, syncDailyActions } from '@/features/actions/services/action.service'
 import {
@@ -19,6 +22,13 @@ import { getDashboardSummary } from '@/features/dashboard/services/dashboard.ser
 import { runLifeEngine } from '@/features/life-engine/services/life-engine.service'
 
 const pillars: Pillar[] = ['Fé', 'Saúde', 'Mente', 'Conhecimento', 'Finanças', 'Propósito', 'Consistência']
+
+const quickActions: Array<{ title: string; category: Pillar; impact: number; icon: ReactNode }> = [
+  { title: 'Beber água', category: 'Saúde', impact: 6, icon: <Droplets className="h-5 w-5" /> },
+  { title: 'Ler a Palavra', category: 'Fé', impact: 16, icon: <BookOpen className="h-5 w-5" /> },
+  { title: 'Estudar 25 min', category: 'Conhecimento', impact: 18, icon: <GraduationCap className="h-5 w-5" /> },
+  { title: 'Registrar gratidão', category: 'Mente', impact: 12, icon: <Heart className="h-5 w-5" /> },
+]
 
 type DraftState = {
   title: string
@@ -43,6 +53,10 @@ function formatDate(date: string) {
   })
 }
 
+function getToday() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export default function HojePage() {
   const [actions, setActions] = useState<LifeAction[]>(() => {
     if (typeof window === 'undefined') {
@@ -55,49 +69,115 @@ export default function HojePage() {
   const [draft, setDraft] = useState(initialDraft)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [activeActionId, setActiveActionId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [summary, setSummary] = useState(() => runLifeEngine(demoActions))
 
   useEffect(() => {
+    let isMounted = true
+
     async function hydrateActions() {
-      const today = new Date().toISOString().slice(0, 10)
-      const remoteActions = await listDailyActionsByDate(today)
-      const nextActions = remoteActions.length > 0 ? remoteActions : loadDailyActions().filter((action) => action.occurred_at.startsWith(today))
+      setIsLoading(true)
+      setError(null)
 
-      if (nextActions.length > 0) {
-        setActions(nextActions)
-        persistDailyActions(nextActions)
+      try {
+        const today = getToday()
+        const remoteActions = await listDailyActionsByDate(today)
+        const localTodayActions = loadDailyActions().filter((action) => action.occurred_at.startsWith(today))
+        const nextActions = remoteActions.length > 0 ? remoteActions : localTodayActions
+
+        if (!isMounted) {
+          return
+        }
+
+        if (nextActions.length > 0) {
+          setActions(nextActions)
+          persistDailyActions(nextActions)
+        }
+
+        const dashboardSummary = await getDashboardSummary(today)
+        if (isMounted) {
+          setSummary(dashboardSummary.summary)
+        }
+      } catch {
+        if (isMounted) {
+          setError('Não foi possível atualizar o painel agora. Mantivemos seus dados locais visíveis.')
+          setSummary(runLifeEngine(loadDailyActions().filter((action) => action.occurred_at.startsWith(getToday()))))
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
-
-      const dashboardSummary = await getDashboardSummary(today)
-      setSummary(dashboardSummary.summary)
-      setIsLoading(false)
     }
 
     void hydrateActions()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const completedCount = actions.filter((action) => action.status === 'completed').length
   const pendingCount = actions.filter((action) => action.status !== 'completed').length
 
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault()
+  const nextRecommendation = useMemo(() => {
+    const weakestPillar = Object.entries(summary.pillarScores).sort((a, b) => a[1] - b[1])[0]?.[0]
+    return weakestPillar ? `Próxima ação recomendada: avance em ${weakestPillar}.` : 'Registre uma ação pequena para ativar seu ritmo.'
+  }, [summary.pillarScores])
 
-    if (!draft.title.trim()) {
-      return
-    }
-
-    const nextAction = await createDailyAction(draft)
+  async function persistNextAction(input: DraftState) {
+    const nextAction = await createDailyAction(input)
     const optimisticActions = [nextAction, ...actions]
     setActions(optimisticActions)
-    setDraft(initialDraft)
-    setIsSaving(true)
+    setSummary(runLifeEngine(optimisticActions))
 
     const savedAction = await createDailyActionRecord(nextAction)
     const nextActions = [savedAction, ...actions]
     setActions(nextActions)
+    setSummary(runLifeEngine(nextActions))
     persistDailyActions(nextActions)
     await syncDailyActions(nextActions)
-    setIsSaving(false)
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
+
+    if (!draft.title.trim()) {
+      setError('Dê um nome para a ação antes de registrar.')
+      return
+    }
+
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      await persistNextAction(draft)
+      setDraft({ ...initialDraft, date: getToday() })
+    } catch {
+      setError('Não foi possível salvar a ação. Tente novamente em alguns instantes.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function handleQuickAction(action: (typeof quickActions)[number]) {
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      await persistNextAction({
+        title: action.title,
+        category: action.category,
+        impact: action.impact,
+        status: 'completed',
+        date: getToday(),
+      })
+    } catch {
+      setError('Não foi possível registrar a ação rápida agora.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function toggleStatus(actionId: string) {
@@ -118,29 +198,50 @@ export default function HojePage() {
         : action,
     )
 
+    setActiveActionId(actionId)
+    setError(null)
     setActions(optimisticNextActions)
+    setSummary(runLifeEngine(optimisticNextActions))
     persistDailyActions(optimisticNextActions)
 
-    const updatedAction = await updateDailyActionStatus(actionId, nextStatus)
-    if (updatedAction) {
-      const persistedActions = actions.map((action) =>
-        action.id === actionId ? updatedAction : action,
-      )
-      setActions(persistedActions)
-      persistDailyActions(persistedActions)
+    try {
+      const updatedAction = await updateDailyActionStatus(actionId, nextStatus)
+      if (updatedAction) {
+        const persistedActions = actions.map((action) =>
+          action.id === actionId ? updatedAction : action,
+        )
+        setActions(persistedActions)
+        setSummary(runLifeEngine(persistedActions))
+        persistDailyActions(persistedActions)
+      }
+    } catch {
+      setError('A mudança ficou salva localmente, mas não sincronizou agora.')
+    } finally {
+      setActiveActionId(null)
     }
   }
 
   async function handleDelete(actionId: string) {
-    const deleted = await deleteDailyAction(actionId)
+    setActiveActionId(actionId)
+    setError(null)
 
-    if (!deleted) {
-      return
+    try {
+      const deleted = await deleteDailyAction(actionId)
+
+      if (!deleted) {
+        setError('Não foi possível excluir esta ação agora.')
+        return
+      }
+
+      const nextActions = actions.filter((action) => action.id !== actionId)
+      setActions(nextActions)
+      setSummary(runLifeEngine(nextActions))
+      persistDailyActions(nextActions)
+    } catch {
+      setError('Não foi possível excluir esta ação agora.')
+    } finally {
+      setActiveActionId(null)
     }
-
-    const nextActions = actions.filter((action) => action.id !== actionId)
-    setActions(nextActions)
-    persistDailyActions(nextActions)
   }
 
   return (
@@ -148,15 +249,15 @@ export default function HojePage() {
       initial={{ opacity: 0, y: 25 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, ease: 'easeOut' }}
-      className="min-h-screen overflow-hidden bg-[#09090B] px-4 pb-48 pt-6 text-white"
+      className="px-4 pb-40 pt-6 text-white sm:pb-48"
     >
-      <BackgroundGlow />
-      <div className="relative mx-auto max-w-5xl space-y-6">
+      <div className="relative mx-auto max-w-6xl space-y-6">
         <header className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm text-zinc-400">Hoje • LifeOS</p>
-            <h1 className="mt-1 text-4xl font-bold tracking-tight">Bom dia, Gabriel ☀️</h1>
+            <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">Bom dia, Gabriel</h1>
             <p className="mt-1 text-zinc-400">Viva com propósito. Evolua com constância.</p>
+            <p className="mt-3 max-w-xl text-sm font-medium text-white/85">Obrigado, Deus, por mais um dia. Vamos transformar intenção em movimento.</p>
           </div>
 
           <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/10 text-xl backdrop-blur-xl">
@@ -164,22 +265,72 @@ export default function HojePage() {
           </div>
         </header>
 
-        <HeroScore score={summary.rhythmIndex} classification={summary.classification} insight={summary.insight} />
+        <HeroScore
+          score={summary.rhythmIndex}
+          classification={summary.classification}
+          insight={`${summary.insight} ${nextRecommendation}`}
+          lifeScore={summary.lifeScore}
+        />
 
-        <section className="grid gap-5 md:grid-cols-4">
-          <MiniStat icon="💧" title="Água" value="2 L" color="from-cyan-500 to-sky-500" delay={0.15} />
-          <MiniStat icon="📖" title="Palavra" value="5 min" color="from-amber-500 to-orange-500" delay={0.25} />
-          <MiniStat icon="📚" title="Estudo" value="60 min" color="from-violet-500 to-fuchsia-500" delay={0.35} />
-          <MiniStat icon="🙏" title="Gratidão" value="Hoje" color="from-emerald-500 to-lime-500" delay={0.45} />
+        {error ? (
+          <FeedbackState
+            variant="error"
+            title="Atenção necessária"
+            description={error}
+          />
+        ) : null}
+
+        <section className="relative overflow-hidden rounded-[32px] border border-white/[0.12] bg-white/[0.035] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.10),0_24px_70px_rgba(0,0,0,.30)] backdrop-blur-2xl sm:p-4">
+          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+          <div className="mb-3 flex items-center justify-between px-1 sm:px-2">
+            <div>
+              <p className="text-sm font-semibold text-white">Painel inteligente</p>
+              <p className="text-xs text-zinc-400">Sinais simples do seu ritmo diário.</p>
+            </div>
+            <Sparkles className="h-4 w-4 text-cyan-100" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <MiniStat icon={<Droplets />} title="Água" value="2 L" color="from-cyan-500 to-sky-500" delay={0.15} />
+            <MiniStat icon={<BookOpen />} title="Palavra" value="5 min" color="from-amber-500 to-orange-500" delay={0.25} />
+            <MiniStat icon={<GraduationCap />} title="Estudo" value="60 min" color="from-violet-500 to-fuchsia-500" delay={0.35} />
+            <MiniStat icon={<Heart />} title="Gratidão" value="Hoje" color="from-emerald-500 to-lime-500" delay={0.45} />
+          </div>
+        </section>
+
+        <section className={panelSurfaceClassName}>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold">Ações rápidas</h2>
+              <p className="text-sm text-zinc-400">Um toque para manter o ritmo sem fricção.</p>
+            </div>
+            <Sparkles className="h-5 w-5 text-cyan-200" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {quickActions.map((action) => (
+              <button
+                key={action.title}
+                type="button"
+                disabled={isSaving}
+                onClick={() => void handleQuickAction(action)}
+                className={`${insetSurfaceClassName} flex items-center gap-3 text-left disabled:opacity-60`}
+              >
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-lg">{action.icon}</span>
+                <span>
+                  <span className="block font-semibold">{action.title}</span>
+                  <span className="text-xs text-zinc-400">{action.category} • {action.impact} pts</span>
+                </span>
+              </button>
+            ))}
+          </div>
         </section>
 
         <motion.section
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.15, duration: 0.55 }}
-          className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]"
+          className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]"
         >
-          <div className="rounded-[32px] border border-white/10 bg-zinc-900/80 p-5 shadow-xl shadow-black/20 backdrop-blur-xl">
+          <div className={panelSurfaceClassName}>
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold">Registrar ação</h2>
@@ -197,7 +348,7 @@ export default function HojePage() {
                   <input
                     value={draft.title}
                     onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
-                    className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-white outline-none ring-0"
+                    className={fieldClassName}
                     placeholder="Ex.: Meditar 10 min"
                   />
                 </label>
@@ -207,7 +358,7 @@ export default function HojePage() {
                   <select
                     value={draft.category}
                     onChange={(event) => setDraft((prev) => ({ ...prev, category: event.target.value as Pillar }))}
-                    className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-white outline-none"
+                    className={selectFieldClassName}
                   >
                     {pillars.map((pillar) => (
                       <option key={pillar} value={pillar} className="bg-zinc-900">
@@ -226,7 +377,7 @@ export default function HojePage() {
                     min="1"
                     value={draft.impact}
                     onChange={(event) => setDraft((prev) => ({ ...prev, impact: Number(event.target.value) }))}
-                    className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-white outline-none"
+                    className={fieldClassName}
                   />
                 </label>
 
@@ -235,7 +386,7 @@ export default function HojePage() {
                   <select
                     value={draft.status}
                     onChange={(event) => setDraft((prev) => ({ ...prev, status: event.target.value as 'completed' | 'pending' }))}
-                    className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-white outline-none"
+                    className={selectFieldClassName}
                   >
                     <option value="pending" className="bg-zinc-900">Pendente</option>
                     <option value="completed" className="bg-zinc-900">Concluído</option>
@@ -248,18 +399,19 @@ export default function HojePage() {
                     type="date"
                     value={draft.date}
                     onChange={(event) => setDraft((prev) => ({ ...prev, date: event.target.value }))}
-                    className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-white outline-none"
+                    className={fieldClassName}
                   />
                 </label>
               </div>
 
-              <Button type="submit" disabled={isSaving} className="w-full bg-cyan-500 px-4 py-3 hover:bg-cyan-400">
+              <Button type="submit" isLoading={isSaving} className="w-full">
+                <Plus className="h-4 w-4" />
                 {isSaving ? 'Salvando...' : 'Adicionar ação'}
               </Button>
             </form>
           </div>
 
-          <div className="rounded-[32px] border border-white/10 bg-zinc-900/80 p-5 shadow-xl shadow-black/20 backdrop-blur-xl">
+          <div className={panelSurfaceClassName}>
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Ações do dia</h2>
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-zinc-300">
@@ -269,27 +421,38 @@ export default function HojePage() {
 
             <div className="mt-5 space-y-3">
               {isLoading ? (
-                <p className="text-sm text-zinc-400">Carregando ações...</p>
+                <FeedbackState variant="loading" title="Carregando ações" description="Sincronizando seu dia com calma." />
               ) : actions.length === 0 ? (
-                <p className="text-sm text-zinc-400">Nenhuma ação registrada ainda.</p>
+                <FeedbackState
+                  variant="empty"
+                  title="Nenhuma ação registrada ainda"
+                  description="Comece com uma ação rápida ou registre uma intenção para hoje."
+                />
               ) : (
                 actions.map((action) => (
-                  <div key={action.id} className={`rounded-2xl border p-4 transition ${action.status === 'completed' ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-white/10 bg-white/[0.04]'}`}>
+                  <div key={action.id} className={`rounded-2xl border p-4 transition ${action.status === 'completed' ? 'border-emerald-400/35 bg-emerald-500/10' : 'border-white/15 bg-white/[0.055] hover:border-cyan-300/25 hover:bg-white/[0.075]'}`}>
                     <div className="flex items-start justify-between gap-3">
-                      <button type="button" onClick={() => void toggleStatus(action.id)} className="flex-1 text-left">
-                        <p className="font-semibold">{action.title}</p>
-                        <p className="text-sm text-zinc-400">
-                          {action.category ?? action.pillar} • {action.value} pts
-                        </p>
-                        <div className="mt-2 flex items-center gap-2">
-                          <span className={`rounded-full px-2 py-1 text-xs ${action.status === 'completed' ? 'bg-emerald-500 text-black' : 'bg-white/10 text-zinc-300'}`}>
-                            {action.status === 'completed' ? 'Concluído' : 'Pendente'}
+                      <button type="button" onClick={() => void toggleStatus(action.id)} className="flex-1 text-left" disabled={activeActionId === action.id}>
+                        <div className="flex items-start gap-3">
+                          <span className={`mt-1 grid h-6 w-6 place-items-center rounded-full border ${action.status === 'completed' ? 'border-emerald-400 bg-emerald-400 text-black' : 'border-white/20 bg-white/5 text-transparent'}`}>
+                            <CheckCircle2 className="h-4 w-4" />
                           </span>
-                          <p className="text-xs text-zinc-500">{formatDate(action.occurred_at.slice(0, 10))}</p>
+                          <span>
+                            <span className="block font-semibold">{action.title}</span>
+                            <span className="text-sm text-zinc-400">
+                              {action.category ?? action.pillar} • {action.value} pts
+                            </span>
+                            <span className="mt-2 flex items-center gap-2">
+                              <span className={`rounded-full px-2 py-1 text-xs ${action.status === 'completed' ? 'bg-emerald-500 text-black' : 'bg-white/10 text-zinc-300'}`}>
+                                {action.status === 'completed' ? 'Concluído' : 'Pendente'}
+                              </span>
+                              <span className="text-xs text-zinc-500">{formatDate(action.occurred_at.slice(0, 10))}</span>
+                            </span>
+                          </span>
                         </div>
                       </button>
-                      <button type="button" onClick={() => void handleDelete(action.id)} className="rounded-full border border-white/10 px-3 py-1 text-xs text-zinc-400 transition hover:bg-white/10">
-                        Excluir
+                      <button type="button" aria-label={`Excluir ${action.title}`} onClick={() => void handleDelete(action.id)} className="rounded-full border border-white/15 bg-white/[0.04] p-2 text-zinc-400 transition hover:border-rose-300/35 hover:bg-rose-500/10 hover:text-rose-100" disabled={activeActionId === action.id}>
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
@@ -299,18 +462,21 @@ export default function HojePage() {
           </div>
         </motion.section>
 
-        <section className="rounded-[32px] border border-white/10 bg-zinc-900/80 p-5 shadow-xl shadow-black/20 backdrop-blur-xl">
-          <h2 className="text-xl font-bold">Pilares</h2>
+        <section className={panelSurfaceClassName}>
+          <div className="flex items-center gap-2">
+            <Droplets className="h-5 w-5 text-cyan-200" />
+            <h2 className="text-xl font-bold">Pilares</h2>
+          </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {Object.entries(summary.pillarScores).map(([pillar, value]) => (
-              <div key={pillar} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <div key={pillar} className={insetSurfaceClassName}>
                 <div className="mb-2 flex justify-between text-sm">
                   <span>{pillar}</span>
                   <span className="text-zinc-400">{value}</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full rounded-full bg-blue-500" style={{ width: `${value}%` }} />
+                  <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400" style={{ width: `${value}%` }} />
                 </div>
               </div>
             ))}
