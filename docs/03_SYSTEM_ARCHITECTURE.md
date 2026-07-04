@@ -73,6 +73,18 @@ Modulo planejado como camada de inteligencia orquestradora acima das engines. De
 
 Nesta etapa, o Life Coach existe apenas como arquitetura documentada em `docs/20_LIFE_COACH_PRD.md`. Nao ha IA real, chat, banco novo, push ou API externa implementados.
 
+### Persistence Core
+
+Camada de persistencia desacoplada documentada em `docs/21_PERSISTENCE_CORE.md`. Define repositories, storage, adapters e models para preparar Supabase como fonte principal mantendo fallback local.
+
+### Habits Engine
+
+Modulo de habitos documentado em `docs/22_HABITS_ENGINE.md`. Organiza habitos diarios, semanais e mensais, checklist, streak, historico, frequencia, peso e prioridade.
+
+### Activity Engine
+
+Modulo de academia e corrida documentado em `docs/23_ACTIVITY_ENGINE.md`. Organiza treinos, exercicios, corridas, caminhadas, historico, calendario, volume semanal, tempo total e distancia, com arquitetura preparada para GPS, Apple Watch, Strava, HealthKit e Google Fit.
+
 ## Backend e Banco
 
 Supabase esta modelado em `supabase/migrations/0001_alpha_schema.sql`.
