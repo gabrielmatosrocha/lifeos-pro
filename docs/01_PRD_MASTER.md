@@ -64,6 +64,10 @@ Area de identidade, preferencias, configuracoes, contexto pessoal e onboarding.
 
 Camada central que interpreta acoes, pesos, pilares e historico para gerar score, ritmo, classificacao e insights.
 
+### Life Coach
+
+Modulo planejado como mentor inteligente do LifeOS. Nao e chatbot. Deve consumir sinais de Life Engine, Dream Engine, Memory Engine, Diario, Metas e Evolucao para orientar, incentivar, elogiar, cobrar, alertar ou permanecer em silencio. A arquitetura e regras estao documentadas em `docs/20_LIFE_COACH_PRD.md`.
+
 ## Requisitos Funcionais Prioritarios
 
 1. Usuario deve conseguir criar conta e entrar.

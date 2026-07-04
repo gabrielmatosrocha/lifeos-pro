@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { BookOpen, CheckCircle2, Droplets, GraduationCap, Heart, Plus, Sparkles, Trash2 } from 'lucide-react'
+import DailyAdvice from '@/components/coach/DailyAdvice'
 import HeroScore from '@/components/dashboard/HeroScore'
 import MiniStat from '@/components/ui/MiniStat'
 import Button from '@/components/ui/Button'
@@ -18,6 +19,8 @@ import {
   updateDailyActionStatus,
 } from '@/features/actions/services/daily-actions.service'
 import type { LifeAction, Pillar } from '@/features/actions/types/action.types'
+import type { CoachAdvice } from '@/features/coach/types/coach.types'
+import { getDailyCoachAdvice } from '@/features/coach/services/coach.service'
 import { getDashboardSummary } from '@/features/dashboard/services/dashboard.service'
 import { runLifeEngine } from '@/features/life-engine/services/life-engine.service'
 
@@ -72,6 +75,7 @@ export default function HojePage() {
   const [activeActionId, setActiveActionId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [summary, setSummary] = useState(() => runLifeEngine(demoActions))
+  const [dailyAdvice, setDailyAdvice] = useState<CoachAdvice | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -120,6 +124,31 @@ export default function HojePage() {
 
   const completedCount = actions.filter((action) => action.status === 'completed').length
   const pendingCount = actions.filter((action) => action.status !== 'completed').length
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadDailyAdvice() {
+      const advice = await getDailyCoachAdvice({
+        actions,
+        lifeScore: summary.lifeScore,
+        rhythmIndex: summary.rhythmIndex,
+        pillarScores: summary.pillarScores,
+        completedHabits: completedCount,
+        pendingHabits: pendingCount,
+      })
+
+      if (isMounted) {
+        setDailyAdvice(advice)
+      }
+    }
+
+    void loadDailyAdvice()
+
+    return () => {
+      isMounted = false
+    }
+  }, [actions, completedCount, pendingCount, summary.lifeScore, summary.pillarScores, summary.rhythmIndex])
 
   const nextRecommendation = useMemo(() => {
     const weakestPillar = Object.entries(summary.pillarScores).sort((a, b) => a[1] - b[1])[0]?.[0]
@@ -271,6 +300,8 @@ export default function HojePage() {
           insight={`${summary.insight} ${nextRecommendation}`}
           lifeScore={summary.lifeScore}
         />
+
+        {dailyAdvice ? <DailyAdvice advice={dailyAdvice} /> : null}
 
         {error ? (
           <FeedbackState

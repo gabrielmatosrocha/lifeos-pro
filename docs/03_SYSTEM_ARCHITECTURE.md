@@ -67,6 +67,12 @@ Responsavel por agregar acoes, metas e diario, rodar Life Engine e entregar resu
 
 Responsavel por calcular score por pilar, life score, rhythm index, classificacao e insight simples.
 
+### Life Coach
+
+Modulo planejado como camada de inteligencia orquestradora acima das engines. Deve consumir contexto de Life Engine, Dream Engine, Memory Engine, Evolution, Diario, Metas, Habitos e Perfil para gerar Conselho do Dia, insights, recomendacoes e Life Reviews.
+
+Nesta etapa, o Life Coach existe apenas como arquitetura documentada em `docs/20_LIFE_COACH_PRD.md`. Nao ha IA real, chat, banco novo, push ou API externa implementados.
+
 ## Backend e Banco
 
 Supabase esta modelado em `supabase/migrations/0001_alpha_schema.sql`.
