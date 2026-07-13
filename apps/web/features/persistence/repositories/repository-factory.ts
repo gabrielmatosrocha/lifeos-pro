@@ -1,5 +1,6 @@
 import { createSupabasePersistenceAdapter } from '@/features/persistence/adapters/supabase.adapter'
 import { createLocalRepository } from '@/features/persistence/repositories/local.repository'
+import { createSupabaseRepository } from '@/features/persistence/repositories/supabase.repository'
 import type { CrudRepository, PersistedEntity, PersistenceModel } from '@/features/persistence/types/persistence.types'
 
 const STORAGE_PREFIX = 'lifeos.persistence'
@@ -20,10 +21,11 @@ function getUserScopedStorageKey(model: PersistenceModel) {
 
 export function createPersistenceRepository<T extends PersistedEntity>(model: PersistenceModel, idPrefix: string): CrudRepository<T> {
   const supabase = createSupabasePersistenceAdapter()
+  const localRepository = createLocalRepository<T>(getUserScopedStorageKey(model), idPrefix)
 
-  // Supabase is the primary planned source. Until migrations are added for each
-  // model, repositories use the local implementation with the same CRUD contract.
-  supabase.tableFor(model)
+  if (supabase.isAvailable()) {
+    return createSupabaseRepository<T>(supabase.tableFor(model), localRepository)
+  }
 
-  return createLocalRepository<T>(getUserScopedStorageKey(model), idPrefix)
+  return localRepository
 }

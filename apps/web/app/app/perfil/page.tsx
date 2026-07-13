@@ -8,11 +8,16 @@ import { Card } from '@/components/ui/Card'
 import FeedbackState from '@/components/ui/FeedbackState'
 import { getCurrentUser, signOut } from '@/features/auth/services/auth.service'
 import { getMemoryEngineMock } from '@/features/memory/services/memory.service'
+import { createProfileRepository } from '@/features/profile/repositories/profile.repository'
+import type { UserProfile } from '@/features/profile/types/profile.types'
+
+const profileRepository = createProfileRepository()
 
 export default function PerfilPage() {
   const router = useRouter()
   const [memory] = useState(() => getMemoryEngineMock())
   const [userEmail, setUserEmail] = useState('')
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,6 +31,18 @@ export default function PerfilPage() {
         const user = await getCurrentUser()
         if (isMounted) {
           setUserEmail(user?.email ?? '')
+        }
+
+        if (user) {
+          const existingProfile = await profileRepository.getByUserId(user.id)
+          const nextProfile = existingProfile ?? await profileRepository.upsert({
+            user_id: user.id,
+            email: user.email,
+          })
+
+          if (isMounted) {
+            setProfile(nextProfile)
+          }
         }
       } catch {
         if (isMounted) {
@@ -66,6 +83,35 @@ export default function PerfilPage() {
         <h2 className="mt-1 text-xl font-bold">{userEmail || 'Usuário autenticado'}</h2>
         <p className="mt-1 text-slate-500">Disciplina • Fé • Evolução</p>
       </Card>
+
+      {profile ? (
+        <Card className="border-white/15 bg-white/[0.05]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm text-slate-500">Preferências</p>
+              <h2 className="mt-1 text-xl font-bold">Configurações do LifeOS</h2>
+              <p className="mt-1 text-sm text-slate-500">Preparado para personalizar Coach, espiritualidade e foco principal.</p>
+            </div>
+            <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100">
+              {profile.preferences.primaryFocus}
+            </span>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3">
+              <p className="text-xs text-zinc-500">Coach</p>
+              <p className="mt-1 font-semibold text-white">{profile.preferences.coachEnabled ? 'Ativo' : 'Pausado'}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3">
+              <p className="text-xs text-zinc-500">Espiritualidade</p>
+              <p className="mt-1 font-semibold text-white">{profile.preferences.spiritualContentEnabled ? 'Ativa' : 'Desativada'}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3">
+              <p className="text-xs text-zinc-500">Frequência</p>
+              <p className="mt-1 font-semibold text-white">{profile.preferences.notificationFrequency}</p>
+            </div>
+          </div>
+        </Card>
+      ) : null}
 
       <MemoryDashboard memory={memory} />
 

@@ -180,6 +180,52 @@ export async function updateGoalProgress(goalId: string, current_value: number):
   return nextGoals
 }
 
+export async function updateGoal(goalId: string, patch: Partial<Omit<GoalRecord, 'id' | 'user_id' | 'created_at'>>): Promise<GoalRecord[]> {
+  const nextPatch: Partial<Omit<GoalRecord, 'id' | 'user_id' | 'created_at'>> = {
+    ...patch,
+    updated_at: new Date().toISOString(),
+  }
+
+  if (patch.title !== undefined) {
+    nextPatch.title = patch.title.trim()
+  }
+
+  if (patch.target_value !== undefined) {
+    nextPatch.target_value = Math.max(1, patch.target_value)
+  }
+
+  const localGoals = loadGoals().map((goal) => (goal.id === goalId ? { ...goal, ...nextPatch } : goal))
+  persistGoals(localGoals)
+
+  const supabase = getSupabaseClient()
+  const userId = await getActiveUserId()
+
+  if (!supabase || userId === 'demo') {
+    return localGoals
+  }
+
+  const { data, error } = await supabase
+    .from('goals')
+    .update(nextPatch)
+    .eq('id', goalId)
+    .eq('user_id', userId)
+    .select('*')
+    .single()
+
+  if (error || !data) {
+    return localGoals
+  }
+
+  const remoteRecord = toGoalRecord(data as SupabaseGoalRecord)
+  const nextGoals = localGoals.map((goal) => (goal.id === goalId ? remoteRecord : goal))
+  persistGoals(nextGoals)
+  return nextGoals
+}
+
+export async function archiveGoal(goalId: string): Promise<GoalRecord[]> {
+  return updateGoal(goalId, { status: 'paused' })
+}
+
 export async function deleteGoal(goalId: string): Promise<GoalRecord[]> {
   const localGoals = loadGoals().filter((goal) => goal.id !== goalId)
   persistGoals(localGoals)

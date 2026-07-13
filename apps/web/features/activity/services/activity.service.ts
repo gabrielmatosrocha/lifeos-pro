@@ -1,5 +1,6 @@
 import { runRepository, workoutRepository } from '@/features/activity/repositories/activity.repository'
 import type { ActivityCalendarDay, ActivityEngineState, ActivitySummary, RunRecord, WorkoutRecord } from '@/features/activity/types/activity.types'
+import { getActiveUserId } from '@/features/auth/services/auth.service'
 
 const DEMO_USER_ID = 'demo'
 
@@ -85,9 +86,10 @@ function buildCalendar(workouts: WorkoutRecord[], runs: RunRecord[]): ActivityCa
   })
 }
 
-export async function getActivityEngineState(userId = DEMO_USER_ID): Promise<ActivityEngineState> {
-  const workoutsResult = await workoutRepository.list({ userId })
-  const runsResult = await runRepository.list({ userId })
+export async function getActivityEngineState(userId?: string): Promise<ActivityEngineState> {
+  const scopedUserId = userId ?? await getActiveUserId()
+  const workoutsResult = await workoutRepository.list({ userId: scopedUserId })
+  const runsResult = await runRepository.list({ userId: scopedUserId })
   const workouts = workoutsResult.data.length > 0 ? workoutsResult.data : demoWorkouts
   const runs = runsResult.data.length > 0 ? runsResult.data : demoRuns
 

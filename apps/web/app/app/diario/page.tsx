@@ -5,7 +5,7 @@ import Button from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import FeedbackState from '@/components/ui/FeedbackState'
 import { fieldClassName, selectFieldClassName, subtleActionClassName, textareaFieldClassName } from '@/components/ui/fieldStyles'
-import { createJournalEntryRecord, deleteJournalEntry, listJournalEntries, loadJournalEntries } from '@/features/journal/services/journal.service'
+import { createJournalEntryRecord, deleteJournalEntry, listJournalEntries, loadJournalEntries, updateJournalEntryRecord } from '@/features/journal/services/journal.service'
 import type { JournalEntry, JournalMood } from '@/features/journal/types/journal.types'
 
 const moods: JournalMood[] = ['Bom', 'Excelente', 'Neutro', 'Difícil']
@@ -24,6 +24,10 @@ export default function DiarioPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editMood, setEditMood] = useState<JournalMood>('Bom')
+  const [editReflection, setEditReflection] = useState('')
 
   useEffect(() => {
     let isMounted = true
@@ -88,6 +92,51 @@ export default function DiarioPage() {
     }
   }
 
+  function startEditing(entry: JournalEntry) {
+    setEditingEntryId(entry.id)
+    setEditTitle(entry.title)
+    setEditMood(entry.mood)
+    setEditReflection(entry.reflection)
+    setError(null)
+  }
+
+  function cancelEditing() {
+    setEditingEntryId(null)
+    setEditTitle('')
+    setEditMood('Bom')
+    setEditReflection('')
+  }
+
+  async function handleUpdateEntry(event: React.FormEvent) {
+    event.preventDefault()
+
+    if (!editingEntryId) {
+      return
+    }
+
+    if (!editTitle.trim() || !editReflection.trim()) {
+      setError('Preencha título e reflexão antes de salvar.')
+      return
+    }
+
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      const nextEntries = await updateJournalEntryRecord(editingEntryId, {
+        title: editTitle,
+        mood: editMood,
+        reflection: editReflection,
+      })
+      setEntries(nextEntries)
+      cancelEditing()
+    } catch {
+      setError('Não foi possível atualizar a reflexão agora.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <main className="mx-auto max-w-4xl space-y-6 px-4 pb-40 pt-6 text-white sm:pb-48">
       <header>
@@ -128,8 +177,26 @@ export default function DiarioPage() {
                   <p className="mt-2 text-sm text-slate-400">{entry.mood}</p>
                   <p className="mt-3 text-slate-300">{entry.reflection}</p>
                 </div>
-                <button type="button" onClick={() => void handleDelete(entry.id)} className={subtleActionClassName}>Excluir</button>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <button type="button" onClick={() => startEditing(entry)} className="rounded-full border border-white/15 bg-white/[0.045] px-3 py-1 text-xs text-slate-300 transition-all duration-200 hover:border-cyan-300/35 hover:bg-cyan-500/10 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50">Editar</button>
+                  <button type="button" onClick={() => void handleDelete(entry.id)} className={subtleActionClassName}>Excluir</button>
+                </div>
               </div>
+              {editingEntryId === entry.id ? (
+                <form onSubmit={handleUpdateEntry} className="mt-4 space-y-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+                  <input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} className={fieldClassName} aria-label={`Editar título de ${entry.title}`} />
+                  <select value={editMood} onChange={(event) => setEditMood(event.target.value as JournalMood)} className={selectFieldClassName} aria-label={`Editar humor de ${entry.title}`}>
+                    {moods.map((item) => (
+                      <option key={item} value={item} className="bg-zinc-900">{item}</option>
+                    ))}
+                  </select>
+                  <textarea value={editReflection} onChange={(event) => setEditReflection(event.target.value)} className={textareaFieldClassName} rows={4} aria-label={`Editar reflexão de ${entry.title}`} />
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="submit" isLoading={isSaving} size="sm">Salvar</Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={cancelEditing}>Cancelar</Button>
+                  </div>
+                </form>
+              ) : null}
             </Card>
           ))
         )}

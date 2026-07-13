@@ -37,3 +37,4 @@ export type PersistenceModel =
   | 'habits'
   | 'habit_events'
   | 'activity_sessions'
+  | 'profiles'

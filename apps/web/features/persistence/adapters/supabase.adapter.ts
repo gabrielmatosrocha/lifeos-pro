@@ -16,6 +16,7 @@ const tableMap: Record<PersistenceModel, string> = {
   habits: 'habits',
   habit_events: 'habit_events',
   activity_sessions: 'activity_sessions',
+  profiles: 'profiles',
 }
 
 export function createSupabasePersistenceAdapter(): SupabasePersistenceAdapter {

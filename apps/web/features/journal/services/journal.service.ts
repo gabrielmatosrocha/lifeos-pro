@@ -147,6 +147,48 @@ export async function createJournalEntryRecord(input: JournalDraft): Promise<Jou
   return nextEntries
 }
 
+export async function updateJournalEntryRecord(entryId: string, patch: Partial<Pick<JournalEntry, 'title' | 'mood' | 'reflection'>>): Promise<JournalEntry[]> {
+  const nextPatch: Partial<JournalEntry> = {
+    ...patch,
+    updated_at: new Date().toISOString(),
+  }
+
+  if (patch.title !== undefined) {
+    nextPatch.title = patch.title.trim()
+  }
+
+  if (patch.reflection !== undefined) {
+    nextPatch.reflection = patch.reflection.trim()
+  }
+
+  const localEntries = loadJournalEntries().map((entry) => (entry.id === entryId ? { ...entry, ...nextPatch } : entry))
+  persistJournalEntries(localEntries)
+
+  const supabase = getSupabaseClient()
+  const userId = await getActiveUserId()
+
+  if (!supabase || userId === 'demo') {
+    return localEntries
+  }
+
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .update(nextPatch)
+    .eq('id', entryId)
+    .eq('user_id', userId)
+    .select('*')
+    .single()
+
+  if (error || !data) {
+    return localEntries
+  }
+
+  const remoteRecord = toJournalEntry(data as SupabaseJournalEntry)
+  const nextEntries = localEntries.map((entry) => (entry.id === entryId ? remoteRecord : entry))
+  persistJournalEntries(nextEntries)
+  return nextEntries
+}
+
 export async function deleteJournalEntry(entryId: string): Promise<JournalEntry[]> {
   const localEntries = loadJournalEntries().filter((entry) => entry.id !== entryId)
   persistJournalEntries(localEntries)

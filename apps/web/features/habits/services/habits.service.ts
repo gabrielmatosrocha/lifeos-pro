@@ -1,5 +1,6 @@
 import { habitEventRepository, habitRepository } from '@/features/habits/repositories/habit.repository'
 import type { HabitDraft, HabitEngineState, HabitEvent, HabitRecord, HabitSummary } from '@/features/habits/types/habit.types'
+import { getActiveUserId } from '@/features/auth/services/auth.service'
 
 const DEMO_USER_ID = 'demo'
 
@@ -71,9 +72,10 @@ function calculateSummary(habits: HabitRecord[], events: HabitEvent[], date = to
   }
 }
 
-export async function getHabitEngineState(userId = DEMO_USER_ID): Promise<HabitEngineState> {
-  const habitsResult = await habitRepository.list({ userId })
-  const eventsResult = await habitEventRepository.list({ userId })
+export async function getHabitEngineState(userId?: string): Promise<HabitEngineState> {
+  const scopedUserId = userId ?? await getActiveUserId()
+  const habitsResult = await habitRepository.list({ userId: scopedUserId })
+  const eventsResult = await habitEventRepository.list({ userId: scopedUserId })
   const habits = habitsResult.data.length > 0 ? habitsResult.data : demoHabits
   const events = eventsResult.data.length > 0 ? eventsResult.data : demoHabitEvents
 

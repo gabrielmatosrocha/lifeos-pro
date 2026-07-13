@@ -85,6 +85,26 @@ Modulo de habitos documentado em `docs/22_HABITS_ENGINE.md`. Organiza habitos di
 
 Modulo de academia e corrida documentado em `docs/23_ACTIVITY_ENGINE.md`. Organiza treinos, exercicios, corridas, caminhadas, historico, calendario, volume semanal, tempo total e distancia, com arquitetura preparada para GPS, Apple Watch, Strava, HealthKit e Google Fit.
 
+### Review Engine
+
+Modulo deterministico inicial para gerar resumos de periodo a partir das engines existentes. A primeira versao alimenta a Home com resumo semanal sem IA real.
+
+### Dashboard Widgets
+
+Camada de composicao visual documentada em `docs/26_LIFE_DASHBOARD_V2.md`. Permite transformar sinais das engines em widgets reorganizaveis para `/app/hoje`.
+
+### CRUD V1
+
+Contratos de CRUD documentados em `docs/25_CRUD_V1.md`, usando Persistence Core e fallback local. O objetivo e preparar operacoes reais por modulo sem acoplar telas ao Supabase.
+
+### Auth System
+
+Arquitetura multiusuario documentada em `docs/27_AUTH_SYSTEM_V1.md`. Supabase Auth e o caminho principal quando configurado, com fallback local preservado para desenvolvimento.
+
+### Supabase Integration
+
+Integracao documentada em `docs/28_SUPABASE_INTEGRATION_V1.md`. Repositories reais usam Supabase como fonte principal e fallback local em caso de ausencia de configuracao ou erro.
+
 ## Backend e Banco
 
 Supabase esta modelado em `supabase/migrations/0001_alpha_schema.sql`.

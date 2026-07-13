@@ -5,20 +5,34 @@ import { useState } from 'react'
 import BackgroundGlow from '@/components/layout/BackgroundGlow'
 import Button from '@/components/ui/Button'
 import { fieldClassName, panelSurfaceClassName } from '@/components/ui/fieldStyles'
-import { signInWithPassword, signUpWithPassword } from '@/features/auth/services/auth.service'
+import { sendPasswordReset, signInWithPassword, signUpWithPassword } from '@/features/auth/services/auth.service'
 
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login')
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError(null)
     setIsSubmitting(true)
+
+    if (mode === 'reset') {
+      const { error } = await sendPasswordReset(email)
+      setIsSubmitting(false)
+
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      setSuccess('Enviamos as instruções de recuperação para o seu e-mail.')
+      return
+    }
 
     const action = mode === 'login' ? signInWithPassword(email, password) : signUpWithPassword(email, password)
     const { data, error } = await action
@@ -36,6 +50,7 @@ export default function LoginPage() {
   }
 
   const isLogin = mode === 'login'
+  const isReset = mode === 'reset'
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.12),transparent_30%),linear-gradient(180deg,#020617_0%,#0f172a_48%,#09090b_100%)] px-4 py-8 text-white sm:px-6 lg:px-8">
@@ -65,12 +80,14 @@ export default function LoginPage() {
           <div className="mb-7">
             <p className="font-semibold text-cyan-300">LifeOS Pro</p>
             <h2 className="mt-2 text-3xl font-bold text-white">
-              {isLogin ? 'Entrar' : 'Criar conta'}
+              {isReset ? 'Recuperar senha' : isLogin ? 'Entrar' : 'Criar conta'}
             </h2>
             <p className="mt-2 text-sm leading-6 text-zinc-400">
-              {isLogin
-                ? 'Acesse seu espaço pessoal e continue seu dia com clareza.'
-                : 'Crie seu acesso local para começar a organizar sua vida.'}
+              {isReset
+                ? 'Informe seu e-mail para receber instruções de recuperação.'
+                : isLogin
+                  ? 'Acesse seu espaço pessoal e continue seu dia com clareza.'
+                  : 'Crie seu acesso local para começar a organizar sua vida.'}
             </p>
           </div>
 
@@ -88,34 +105,56 @@ export default function LoginPage() {
               />
             </label>
 
-            <label className="block text-sm font-medium text-zinc-300">
-              <span className="mb-2 block">Senha</span>
-              <input
-                className={fieldClassName}
-                type="password"
-                placeholder="Sua senha"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete={isLogin ? 'current-password' : 'new-password'}
-                required
-              />
-            </label>
+            {!isReset ? (
+              <label className="block text-sm font-medium text-zinc-300">
+                <span className="mb-2 block">Senha</span>
+                <input
+                  className={fieldClassName}
+                  type="password"
+                  placeholder="Sua senha"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete={isLogin ? 'current-password' : 'new-password'}
+                  required
+                />
+              </label>
+            ) : null}
 
             {error ? (
               <p className="rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
                 {error}
               </p>
             ) : null}
+            {success ? (
+              <p className="rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+                {success}
+              </p>
+            ) : null}
 
             <Button type="submit" isLoading={isSubmitting} className="w-full" size="lg">
-              {isSubmitting ? 'Aguarde...' : isLogin ? 'Entrar no LifeOS' : 'Criar minha conta'}
+              {isSubmitting ? 'Aguarde...' : isReset ? 'Enviar recuperação' : isLogin ? 'Entrar no LifeOS' : 'Criar minha conta'}
             </Button>
           </form>
+
+          {isLogin ? (
+            <button
+              type="button"
+              onClick={() => {
+                setError(null)
+                setSuccess(null)
+                setMode('reset')
+              }}
+              className="mt-3 w-full text-sm text-cyan-100/75 transition hover:text-cyan-100"
+            >
+              Esqueci minha senha
+            </button>
+          ) : null}
 
           <button
             type="button"
             onClick={() => {
               setError(null)
+              setSuccess(null)
               setMode(isLogin ? 'signup' : 'login')
             }}
             className="mt-5 w-full rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm text-zinc-300 transition hover:border-cyan-300/30 hover:bg-white/[0.07] hover:text-white"
