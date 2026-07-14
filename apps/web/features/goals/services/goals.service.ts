@@ -1,4 +1,4 @@
-import type { GoalRecord, GoalStatus } from '@/features/goals/types/goal.types'
+import type { GoalPriority, GoalRecord, GoalStatus } from '@/features/goals/types/goal.types'
 import type { SupabaseGoalRecord } from '@/features/goals/types/supabase-goal.types'
 import { getActiveUserId } from '@/features/auth/services/auth.service'
 import { getSupabaseClient } from '@/lib/supabase/client'
@@ -29,6 +29,9 @@ function getStorageKey() {
 
 export type GoalDraft = {
   title: string
+  description?: string
+  deadline?: string
+  priority?: GoalPriority
   pillar: string
   horizon: string
   target_value: number
@@ -43,6 +46,9 @@ async function createGoalRecord(input: GoalDraft): Promise<GoalRecord> {
     id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     user_id: userId,
     title: input.title.trim(),
+    description: input.description?.trim() ?? '',
+    deadline: input.deadline?.trim() ?? '',
+    priority: input.priority ?? 'media',
     pillar: input.pillar,
     horizon: input.horizon,
     target_value: Math.max(1, input.target_value),
@@ -59,6 +65,9 @@ function toGoalRecord(record: SupabaseGoalRecord): GoalRecord {
     id: record.id,
     user_id: record.user_id,
     title: record.title,
+    description: record.description ?? '',
+    deadline: record.deadline ?? '',
+    priority: record.priority ?? 'media',
     pillar: record.pillar,
     horizon: record.horizon,
     target_value: record.target_value,
@@ -133,6 +142,9 @@ export async function createGoal(input: GoalDraft): Promise<GoalRecord[]> {
   const { data, error } = await supabase.from('goals').insert({
     user_id: record.user_id,
     title: record.title,
+    description: record.description,
+    deadline: record.deadline,
+    priority: record.priority,
     pillar: record.pillar,
     horizon: record.horizon,
     target_value: record.target_value,
@@ -190,8 +202,20 @@ export async function updateGoal(goalId: string, patch: Partial<Omit<GoalRecord,
     nextPatch.title = patch.title.trim()
   }
 
+  if (patch.description !== undefined) {
+    nextPatch.description = patch.description.trim()
+  }
+
+  if (patch.deadline !== undefined) {
+    nextPatch.deadline = patch.deadline.trim()
+  }
+
   if (patch.target_value !== undefined) {
     nextPatch.target_value = Math.max(1, patch.target_value)
+  }
+
+  if (patch.current_value !== undefined) {
+    nextPatch.current_value = Math.max(0, patch.current_value)
   }
 
   const localGoals = loadGoals().map((goal) => (goal.id === goalId ? { ...goal, ...nextPatch } : goal))

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import AnalyticsDashboard from '@/components/evolution/AnalyticsDashboard'
 import ActivityModePreview from '@/components/evolution/ActivityModePreview'
+import ActivityTrackingCard from '@/components/evolution/ActivityTrackingCard'
 import CoachDashboard from '@/components/evolution/CoachDashboard'
 import DailyVerseCard from '@/components/evolution/DailyVerseCard'
 import EvolutionComparisonCard from '@/components/evolution/EvolutionComparisonCard'
@@ -58,6 +59,24 @@ type RunCheckInDraftState = {
   distance: number
   duration: string
   pace: string
+  notes: string
+}
+
+type TrackedActivityResult = {
+  kind: ActivityKind
+  distanceKm: number
+  durationMinutes: number
+  pace: string
+  averageSpeedKmh: number
+  calories: number
+  startedAt: string
+  endedAt: string
+  routePoints: Array<{
+    latitude: number
+    longitude: number
+    accuracy?: number
+    timestamp: number
+  }>
   notes: string
 }
 
@@ -168,6 +187,41 @@ export default function EvolucaoPage() {
     setActivityState(activity)
     setGymCheckIns(gymRecords.data)
     setRunCheckIns(runRecords.data)
+  }
+
+  async function handleTrackedActivityFinish(activity: TrackedActivityResult) {
+    setIsSaving(true)
+    setError(null)
+    try {
+      const userId = await getActiveUserId()
+      const date = activity.endedAt.slice(0, 10)
+      const routePreview = activity.routePoints.length > 1
+        ? `${activity.routePoints.length} pontos GPS registrados`
+        : 'Atividade registrada sem rota completa'
+
+      await createRun({
+        user_id: userId,
+        kind: activity.kind,
+        date,
+        distance_km: activity.distanceKm,
+        duration_minutes: activity.durationMinutes,
+        pace: activity.pace,
+        status: 'completed',
+        notes: activity.notes.trim(),
+        route_preview: routePreview,
+        route_points: activity.routePoints,
+        started_at: activity.startedAt,
+        ended_at: activity.endedAt,
+        average_speed_kmh: activity.averageSpeedKmh,
+        calories: activity.calories,
+      })
+
+      await refreshActivityData()
+    } catch {
+      setError('Não foi possível salvar a atividade rastreada agora.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   function startEditingWorkout(workout: WorkoutRecord) {
@@ -448,7 +502,7 @@ export default function EvolucaoPage() {
           <p className="mt-1.5 max-w-2xl text-sm leading-5 text-zinc-400 sm:mt-2 sm:leading-6">Tendências, treinos, corridas, check-ins e inteligência pessoal em um só lugar.</p>
           <p className="mt-1.5 hidden text-sm font-medium text-white/85 sm:block">Você está evoluindo, mesmo quando o progresso parece silencioso.</p>
         </div>
-        <span className="w-fit rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1 text-sm text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,.10)]">Mock · Supabase ready</span>
+        <span className="w-fit rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1 text-sm text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,.10)]">Prévia · Supabase ready</span>
       </header>
 
       <EvolutionPeriodTabs periods={history.periods} activeId={activePeriod.id} onSelect={setActivePeriodId} />
@@ -497,6 +551,10 @@ export default function EvolucaoPage() {
       </div>
 
       {error ? <FeedbackState variant="error" title="Atenção" description={error} /> : null}
+
+      <section>
+        <ActivityTrackingCard onFinish={handleTrackedActivityFinish} isSaving={isSaving} />
+      </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
         <Card>

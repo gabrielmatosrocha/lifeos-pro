@@ -10,6 +10,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@lifeos/core": "file:../../packages/core",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "framer-motion": "^12.42.2",

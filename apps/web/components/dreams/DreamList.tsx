@@ -32,7 +32,7 @@ const statusClassName: Record<DreamStatus, string> = {
 
 export default function DreamList({ dreams, activeDreamId, onSelectDream }: DreamListProps) {
   return (
-    <Card className="p-4 sm:p-5">
+    <Card className="overflow-visible p-4 sm:p-5 xl:h-full">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-cyan-100/80">Sonhos</p>
@@ -42,7 +42,7 @@ export default function DreamList({ dreams, activeDreamId, onSelectDream }: Drea
         <Target className="h-5 w-5 text-cyan-100" />
       </div>
 
-      <div className="scrollbar-none mt-4 max-h-[220px] space-y-3 overflow-y-auto pr-1 sm:mt-5 sm:max-h-[560px]">
+      <div className="scrollbar-none mt-4 space-y-3 overflow-visible pr-0 sm:mt-5 xl:max-h-[640px] xl:overflow-y-auto xl:pr-1">
         {dreams.map((dream) => {
           const StatusIcon = statusIcon[dream.status]
           const isActive = dream.id === activeDreamId

@@ -13,12 +13,13 @@ import { Progress } from '@/components/ui/Progress'
 import { getActiveUserId } from '@/features/auth/services/auth.service'
 import { getDreamEngineMock } from '@/features/dreams/services/dream.service'
 import { archiveGoal, createGoal, deleteGoal, listGoals, loadGoals, updateGoal, updateGoalProgress } from '@/features/goals/services/goals.service'
-import type { GoalRecord } from '@/features/goals/types/goal.types'
+import type { GoalPriority, GoalRecord } from '@/features/goals/types/goal.types'
 import { dreamsRepository } from '@/features/persistence/repositories/domain.repositories'
 import type { PersistedDream } from '@/features/persistence/repositories/domain.repositories'
 
 const pillars = ['Saúde', 'Conhecimento', 'Mente', 'Fé', 'Finanças', 'Propósito']
 const dreamAreas = ['Idiomas', 'Saúde', 'Corrida', 'Fé', 'Finanças', 'Leitura', 'Educação', 'Propósito']
+const goalPriorities: GoalPriority[] = ['baixa', 'media', 'alta']
 
 type DreamDraftState = {
   title: string
@@ -49,6 +50,9 @@ export default function MetasPage() {
     return loadGoals()
   })
   const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [deadline, setDeadline] = useState('')
+  const [priority, setPriority] = useState<GoalPriority>('media')
   const [pillar, setPillar] = useState(pillars[0])
   const [targetValue, setTargetValue] = useState(10)
   const [isLoading, setIsLoading] = useState(true)
@@ -56,8 +60,12 @@ export default function MetasPage() {
   const [error, setError] = useState<string | null>(null)
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editDeadline, setEditDeadline] = useState('')
+  const [editPriority, setEditPriority] = useState<GoalPriority>('media')
   const [editPillar, setEditPillar] = useState(pillars[0])
   const [editTargetValue, setEditTargetValue] = useState(10)
+  const [editCurrentValue, setEditCurrentValue] = useState(0)
   const [dreams, setDreams] = useState<PersistedDream[]>([])
   const [dreamDraft, setDreamDraft] = useState(initialDreamDraft)
   const [editingDreamId, setEditingDreamId] = useState<string | null>(null)
@@ -111,6 +119,9 @@ export default function MetasPage() {
     try {
       const nextGoals = await createGoal({
         title,
+        description,
+        deadline,
+        priority,
         pillar,
         horizon: 'month',
         target_value: targetValue,
@@ -120,6 +131,9 @@ export default function MetasPage() {
 
       setGoals(nextGoals)
       setTitle('')
+      setDescription('')
+      setDeadline('')
+      setPriority('media')
       setTargetValue(10)
     } catch {
       setError('Não foi possível criar a meta agora.')
@@ -141,16 +155,24 @@ export default function MetasPage() {
   function startEditing(goal: GoalRecord) {
     setEditingGoalId(goal.id)
     setEditTitle(goal.title)
+    setEditDescription(goal.description ?? '')
+    setEditDeadline(goal.deadline ?? '')
+    setEditPriority(goal.priority ?? 'media')
     setEditPillar(goal.pillar)
     setEditTargetValue(goal.target_value)
+    setEditCurrentValue(goal.current_value)
     setError(null)
   }
 
   function cancelEditing() {
     setEditingGoalId(null)
     setEditTitle('')
+    setEditDescription('')
+    setEditDeadline('')
+    setEditPriority('media')
     setEditPillar(pillars[0])
     setEditTargetValue(10)
+    setEditCurrentValue(0)
   }
 
   async function handleUpdateGoal(event: React.FormEvent) {
@@ -171,8 +193,12 @@ export default function MetasPage() {
     try {
       const nextGoals = await updateGoal(editingGoalId, {
         title: editTitle,
+        description: editDescription,
+        deadline: editDeadline,
+        priority: editPriority,
         pillar: editPillar,
         target_value: editTargetValue,
+        current_value: editCurrentValue,
       })
 
       setGoals(nextGoals)
@@ -289,7 +315,7 @@ export default function MetasPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 px-4 pb-40 pt-6 text-white sm:pb-48">
+    <main className="mx-auto max-w-7xl space-y-5 px-4 pb-56 pt-5 text-white sm:space-y-6 sm:pb-52 sm:pt-6 lg:pb-44">
       <header>
         <p className="text-sm font-medium text-cyan-100/70">Direção</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">Metas</h1>
@@ -304,9 +330,9 @@ export default function MetasPage() {
           <h2 className="mt-1 text-lg font-semibold text-white">Sonhos, metas e plano de evolução</h2>
         </div>
         <DreamInsight insight={dreamEngine.insight} />
-        <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] xl:gap-6">
           <DreamList dreams={dreamEngine.dreams} activeDreamId={activeDream.id} onSelectDream={setActiveDreamId} />
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-5 sm:space-y-6">
             <DreamPlanCard dream={activeDream} />
             <DreamComposerCard />
           </div>
@@ -319,9 +345,9 @@ export default function MetasPage() {
           <h2 className="mt-1 text-lg font-semibold text-white">Visão executável</h2>
         </div>
 
-        <Card>
+        <Card className="overflow-visible p-4 sm:p-5">
           <h2 className="text-xl font-bold">{editingDreamId ? 'Editar sonho' : 'Novo sonho'}</h2>
-          <form onSubmit={handleDreamSubmit} className="mt-4 grid gap-3 md:grid-cols-2">
+          <form onSubmit={handleDreamSubmit} className="mt-4 grid gap-3 lg:grid-cols-3">
             <input value={dreamDraft.title} onChange={(event) => setDreamDraft((prev) => ({ ...prev, title: event.target.value }))} className={fieldClassName} placeholder="Ex.: Correr 10 km" aria-label="Título do sonho" />
             <input value={dreamDraft.deadline} onChange={(event) => setDreamDraft((prev) => ({ ...prev, deadline: event.target.value }))} className={fieldClassName} placeholder="Prazo desejado" aria-label="Prazo do sonho" />
             <select value={dreamDraft.lifeArea} onChange={(event) => setDreamDraft((prev) => ({ ...prev, lifeArea: event.target.value }))} className={selectFieldClassName} aria-label="Área da vida do sonho">
@@ -336,28 +362,28 @@ export default function MetasPage() {
             </select>
             <input value={dreamDraft.why} onChange={(event) => setDreamDraft((prev) => ({ ...prev, why: event.target.value }))} className={fieldClassName} placeholder="Por que isso importa?" aria-label="Motivo do sonho" />
             <input value={dreamDraft.nextAction} onChange={(event) => setDreamDraft((prev) => ({ ...prev, nextAction: event.target.value }))} className={fieldClassName} placeholder="Próxima ação" aria-label="Próxima ação do sonho" />
-            <div className="flex flex-wrap gap-2 md:col-span-2">
+            <div className="flex flex-wrap gap-2 lg:col-span-3">
               <Button type="submit" isLoading={isSaving}>{editingDreamId ? 'Salvar sonho' : 'Criar sonho'}</Button>
               {editingDreamId ? <Button type="button" variant="ghost" onClick={cancelDreamEditing}>Cancelar</Button> : null}
             </div>
           </form>
         </Card>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid items-start gap-4 lg:grid-cols-2">
           {dreams.length === 0 ? (
             <FeedbackState variant="empty" title="Nenhum sonho salvo" description="Crie um sonho executável para conectar visão, meta e próximo passo." />
           ) : (
             dreams.map((dream) => (
-              <Card key={dream.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm text-slate-500">{dream.life_area} • {dream.priority}</p>
+              <Card key={dream.id} className="overflow-visible p-4 sm:p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-sm text-slate-500">{dream.life_area} ⬢ {dream.priority}</p>
                     <h3 className="mt-1 text-lg font-bold">{dream.title}</h3>
                     <p className="mt-2 text-sm text-zinc-400">{dream.why}</p>
                     <p className="mt-2 text-sm text-cyan-100/80">{dream.next_action}</p>
-                    <p className="mt-2 text-xs text-zinc-500">{dream.status === 'paused' ? 'Arquivado' : 'Ativo'} • {dream.deadline || 'Sem prazo'}</p>
+                    <p className="mt-2 text-xs text-zinc-500">{dream.status === 'paused' ? 'Arquivado' : 'Ativo'} ⬢ {dream.deadline || 'Sem prazo'}</p>
                   </div>
-                  <div className="flex flex-wrap justify-end gap-2">
+                  <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
                     <button type="button" onClick={() => startEditingDream(dream)} className="rounded-full border border-white/15 bg-white/[0.045] px-3 py-1 text-xs text-slate-300 transition-all duration-200 hover:border-cyan-300/35 hover:bg-cyan-500/10 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50">Editar</button>
                     {dream.status !== 'paused' ? (
                       <button type="button" onClick={() => void handleArchiveDream(dream.id)} className="rounded-full border border-white/15 bg-white/[0.045] px-3 py-1 text-xs text-slate-300 transition-all duration-200 hover:border-amber-300/35 hover:bg-amber-500/10 hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/50">Arquivar</button>
@@ -377,18 +403,27 @@ export default function MetasPage() {
           <h2 className="mt-1 text-lg font-semibold text-white">Execução mensurável</h2>
         </div>
 
-      <Card>
+      <Card className="overflow-visible">
         <h2 className="text-xl font-bold">Nova meta</h2>
         <p className="mt-1 text-sm text-zinc-400">Crie algo simples, mensurável e possível para este ciclo.</p>
-        <form onSubmit={handleCreateGoal} className="mt-4 space-y-3">
+        <form onSubmit={handleCreateGoal} className="mt-4 grid gap-3 lg:grid-cols-3">
           <input value={title} onChange={(event) => setTitle(event.target.value)} className={fieldClassName} placeholder="Ex: Correr 20 km este mês" aria-label="Nome da meta" />
+          <input value={description} onChange={(event) => setDescription(event.target.value)} className={fieldClassName} placeholder="Descrição" aria-label="Descrição da meta" />
+          <input value={deadline} onChange={(event) => setDeadline(event.target.value)} className={fieldClassName} placeholder="Prazo" aria-label="Prazo da meta" />
           <select value={pillar} onChange={(event) => setPillar(event.target.value)} className={selectFieldClassName} aria-label="Pilar da meta">
             {pillars.map((item) => (
               <option key={item} value={item} className="bg-zinc-900">{item}</option>
             ))}
           </select>
+          <select value={priority} onChange={(event) => setPriority(event.target.value as GoalPriority)} className={selectFieldClassName} aria-label="Prioridade da meta">
+            {goalPriorities.map((item) => (
+              <option key={item} value={item} className="bg-zinc-900">{item}</option>
+            ))}
+          </select>
           <input type="number" min="1" value={targetValue} onChange={(event) => setTargetValue(Number(event.target.value))} className={fieldClassName} placeholder="Meta" aria-label="Valor alvo da meta" />
-          <Button type="submit" isLoading={isSaving}>Criar meta</Button>
+          <div className="lg:col-span-3">
+            <Button type="submit" isLoading={isSaving}>Criar meta</Button>
+          </div>
         </form>
       </Card>
       </section>
@@ -403,14 +438,16 @@ export default function MetasPage() {
             const progress = Math.min(100, Math.round((goal.current_value / goal.target_value) * 100))
 
             return (
-              <Card key={goal.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm text-slate-500">{goal.pillar}</p>
+              <Card key={goal.id} className="overflow-visible">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-sm text-slate-500">{goal.pillar} • {goal.priority ?? 'media'}</p>
                     <h3 className="mt-1 text-lg font-bold">{goal.title}</h3>
+                    {goal.description ? <p className="mt-2 text-sm leading-6 text-zinc-400">{goal.description}</p> : null}
+                    {goal.deadline ? <p className="mt-2 text-xs text-cyan-100/75">Prazo: {goal.deadline}</p> : null}
                     <p className="mt-1 text-xs text-zinc-500">{goal.status === 'paused' ? 'Arquivada' : goal.status === 'completed' ? 'Concluída' : 'Ativa'}</p>
                   </div>
-                  <div className="flex flex-wrap justify-end gap-2">
+                  <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
                     <button type="button" onClick={() => startEditing(goal)} className="rounded-full border border-white/15 bg-white/[0.045] px-3 py-1 text-xs text-slate-300 transition-all duration-200 hover:border-cyan-300/35 hover:bg-cyan-500/10 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50">Editar</button>
                     {goal.status !== 'paused' ? (
                       <button type="button" onClick={() => void handleArchive(goal.id)} className="rounded-full border border-white/15 bg-white/[0.045] px-3 py-1 text-xs text-slate-300 transition-all duration-200 hover:border-amber-300/35 hover:bg-amber-500/10 hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/50">Arquivar</button>
@@ -420,15 +457,23 @@ export default function MetasPage() {
                 </div>
 
                 {editingGoalId === goal.id ? (
-                  <form onSubmit={handleUpdateGoal} className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3 md:grid-cols-[1fr_180px_150px_auto]">
+                  <form onSubmit={handleUpdateGoal} className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3 lg:grid-cols-3">
                     <input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} className={fieldClassName} aria-label={`Editar nome de ${goal.title}`} />
+                    <input value={editDescription} onChange={(event) => setEditDescription(event.target.value)} className={fieldClassName} aria-label={`Editar descrição de ${goal.title}`} placeholder="Descrição" />
+                    <input value={editDeadline} onChange={(event) => setEditDeadline(event.target.value)} className={fieldClassName} aria-label={`Editar prazo de ${goal.title}`} placeholder="Prazo" />
                     <select value={editPillar} onChange={(event) => setEditPillar(event.target.value)} className={selectFieldClassName} aria-label={`Editar pilar de ${goal.title}`}>
                       {pillars.map((item) => (
                         <option key={item} value={item} className="bg-zinc-900">{item}</option>
                       ))}
                     </select>
+                    <select value={editPriority} onChange={(event) => setEditPriority(event.target.value as GoalPriority)} className={selectFieldClassName} aria-label={`Editar prioridade de ${goal.title}`}>
+                      {goalPriorities.map((item) => (
+                        <option key={item} value={item} className="bg-zinc-900">{item}</option>
+                      ))}
+                    </select>
                     <input type="number" min="1" value={editTargetValue} onChange={(event) => setEditTargetValue(Number(event.target.value))} className={fieldClassName} aria-label={`Editar alvo de ${goal.title}`} />
-                    <div className="flex gap-2">
+                    <input type="number" min="0" value={editCurrentValue} onChange={(event) => setEditCurrentValue(Number(event.target.value))} className={fieldClassName} aria-label={`Editar progresso de ${goal.title}`} />
+                    <div className="flex flex-wrap gap-2 lg:col-span-2">
                       <Button type="submit" isLoading={isSaving} size="sm">Salvar</Button>
                       <Button type="button" variant="ghost" size="sm" onClick={cancelEditing}>Cancelar</Button>
                     </div>
@@ -454,3 +499,4 @@ export default function MetasPage() {
     </main>
   )
 }
+

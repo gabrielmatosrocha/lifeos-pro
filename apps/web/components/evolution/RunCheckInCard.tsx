@@ -1,5 +1,4 @@
-import { Footprints } from 'lucide-react'
-import Button from '@/components/ui/Button'
+﻿import { Footprints } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import { fieldClassName, selectFieldClassName, textareaFieldClassName } from '@/components/ui/fieldStyles'
 import type { RunCheckInRecord } from '@/features/evolution/types/evolution.types'
@@ -14,7 +13,7 @@ export default function RunCheckInCard({ runs }: { runs: RunCheckInRecord[] }) {
         <div>
           <p className="text-sm font-medium text-emerald-100/80">Check-in Corrida/Caminhada</p>
           <h2 className="mt-1 text-xl font-bold text-white">Registrar atividade</h2>
-          <p className="mt-2 text-sm leading-6 text-zinc-400">Mock preparado para tipo, distância, tempo, pace, observação e foto.</p>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">Prévia preparada para tipo, distância, tempo, pace, observação e foto.</p>
         </div>
         <div className="grid h-11 w-11 place-items-center rounded-2xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-100">
           <Footprints className="h-5 w-5" />
@@ -55,9 +54,9 @@ export default function RunCheckInCard({ runs }: { runs: RunCheckInRecord[] }) {
         <PhotoAttachField label="Foto da atividade" />
       </div>
 
-      <Button type="button" className="mt-4 w-full" variant="secondary">
-        Salvar atividade mockada
-      </Button>
+      <p className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm leading-5 text-zinc-400">
+        Use o formulário real de corrida/caminhada acima para salvar uma atividade.
+      </p>
     </Card>
   )
 }

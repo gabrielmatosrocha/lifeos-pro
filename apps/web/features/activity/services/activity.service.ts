@@ -1,6 +1,11 @@
 import { runRepository, workoutRepository } from '@/features/activity/repositories/activity.repository'
-import type { ActivityCalendarDay, ActivityEngineState, ActivitySummary, RunRecord, WorkoutRecord } from '@/features/activity/types/activity.types'
+import type { ActivityEngineState, RunRecord, WorkoutRecord } from '@/features/activity/types/activity.types'
 import { getActiveUserId } from '@/features/auth/services/auth.service'
+import {
+  buildActivityCalendar,
+  buildActivitySummary,
+  getActivityLifeEngineSignals as getCoreActivityLifeEngineSignals,
+} from '@lifeos/core'
 
 const DEMO_USER_ID = 'demo'
 
@@ -61,31 +66,6 @@ export const demoRuns: RunRecord[] = [
   },
 ]
 
-function buildSummary(workouts: WorkoutRecord[], runs: RunRecord[]): ActivitySummary {
-  return {
-    weeklyWorkouts: workouts.filter((workout) => workout.status === 'completed').length,
-    weeklyRuns: runs.filter((run) => run.status === 'completed').length,
-    weeklyVolume: workouts.reduce((sum, workout) => sum + workout.volume, 0),
-    totalMinutes: workouts.reduce((sum, workout) => sum + workout.duration_minutes, 0) + runs.reduce((sum, run) => sum + run.duration_minutes, 0),
-    totalDistanceKm: Number(runs.reduce((sum, run) => sum + run.distance_km, 0).toFixed(1)),
-  }
-}
-
-function buildCalendar(workouts: WorkoutRecord[], runs: RunRecord[]): ActivityCalendarDay[] {
-  const days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
-
-  return days.map((label, index) => {
-    const date = index === 5 ? 'Sábado' : index === 6 ? 'Domingo' : index === 0 ? new Date().toISOString().slice(0, 10) : label
-
-    return {
-      date,
-      label,
-      workoutCount: workouts.filter((workout) => workout.date === date).length,
-      runCount: runs.filter((run) => run.date === date).length,
-    }
-  })
-}
-
 export async function getActivityEngineState(userId?: string): Promise<ActivityEngineState> {
   const scopedUserId = userId ?? await getActiveUserId()
   const workoutsResult = await workoutRepository.list({ userId: scopedUserId })
@@ -96,8 +76,8 @@ export async function getActivityEngineState(userId?: string): Promise<ActivityE
   return {
     workouts,
     runs,
-    summary: buildSummary(workouts, runs),
-    calendar: buildCalendar(workouts, runs),
+    summary: buildActivitySummary(workouts, runs),
+    calendar: buildActivityCalendar(workouts, runs),
     integrations: {
       gps: 'planned',
       appleWatch: 'planned',
@@ -109,13 +89,7 @@ export async function getActivityEngineState(userId?: string): Promise<ActivityE
 }
 
 export function getActivityLifeEngineSignals(state: ActivityEngineState) {
-  return {
-    workoutCount: state.summary.weeklyWorkouts,
-    runCount: state.summary.weeklyRuns,
-    totalMinutes: state.summary.totalMinutes,
-    totalDistanceKm: state.summary.totalDistanceKm,
-    weeklyVolume: state.summary.weeklyVolume,
-  }
+  return getCoreActivityLifeEngineSignals(state)
 }
 
 export const createWorkout = workoutRepository.create

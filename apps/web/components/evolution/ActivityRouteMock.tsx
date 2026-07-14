@@ -1,4 +1,4 @@
-import { MapPinned } from 'lucide-react'
+﻿import { MapPinned } from 'lucide-react'
 
 export default function ActivityRouteMock({ description }: { description: string }) {
   return (
@@ -12,7 +12,7 @@ export default function ActivityRouteMock({ description }: { description: string
       <div className="relative z-10 flex h-full min-h-52 flex-col justify-between">
         <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-zinc-950/50 px-3 py-1 text-xs text-zinc-200 backdrop-blur-xl">
           <MapPinned className="h-3.5 w-3.5 text-cyan-100" />
-          Rota mockada
+          Prévia de rota
         </div>
         <p className="max-w-sm text-sm leading-6 text-zinc-300">{description}</p>
       </div>

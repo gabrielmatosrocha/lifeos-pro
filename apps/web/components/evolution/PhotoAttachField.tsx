@@ -1,4 +1,4 @@
-import { ImagePlus, ShieldCheck } from 'lucide-react'
+﻿import { ImagePlus, ShieldCheck } from 'lucide-react'
 
 type PhotoAttachFieldProps = {
   label: string
@@ -7,7 +7,7 @@ type PhotoAttachFieldProps = {
 
 export default function PhotoAttachField({
   label,
-  description = 'Mock visual. Upload real será conectado ao Supabase Storage em sprint futura.',
+  description = 'Prévia visual preparada para conexão futura com Supabase Storage.',
 }: PhotoAttachFieldProps) {
   return (
     <div className="rounded-[22px] border border-dashed border-white/20 bg-white/[0.045] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.08)] backdrop-blur-xl">

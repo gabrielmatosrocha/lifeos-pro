@@ -58,6 +58,11 @@ create table if not exists public.habits (
   updated_at timestamptz default now()
 );
 
+alter table public.goals
+  add column if not exists description text not null default '',
+  add column if not exists deadline text not null default '',
+  add column if not exists priority text not null default 'media';
+
 create table if not exists public.habit_events (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -98,6 +103,13 @@ create table if not exists public.activity_sessions (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+alter table public.activity_sessions
+  add column if not exists route_points jsonb not null default '[]'::jsonb,
+  add column if not exists started_at text,
+  add column if not exists ended_at text,
+  add column if not exists average_speed_kmh numeric not null default 0,
+  add column if not exists calories numeric not null default 0;
 
 create table if not exists public.reviews (
   id uuid primary key default uuid_generate_v4(),

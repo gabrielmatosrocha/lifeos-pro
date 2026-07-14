@@ -118,7 +118,7 @@ export async function getEvolutionHistoryMock(): Promise<EvolutionHistory> {
       speedKmh: 9.6,
       altitudeGainM: 0,
       calories: 246,
-      mapPreview: 'Rota mockada preparada para Geolocation API, PWA, iPhone e Android.',
+      mapPreview: 'Prévia de rota preparada para Geolocation API, PWA, iPhone e Android.',
       routeName: 'Parque da Cidade',
       startedAt: '06:42',
     },

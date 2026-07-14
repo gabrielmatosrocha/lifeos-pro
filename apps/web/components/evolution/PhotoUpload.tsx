@@ -1,4 +1,4 @@
-import { ImagePlus } from 'lucide-react'
+﻿import { ImagePlus } from 'lucide-react'
 
 export default function PhotoUpload({ label = 'Foto mock' }: { label?: string }) {
   return (

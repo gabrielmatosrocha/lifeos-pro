@@ -1,5 +1,4 @@
-import { Dumbbell } from 'lucide-react'
-import Button from '@/components/ui/Button'
+﻿import { Dumbbell } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import { fieldClassName, selectFieldClassName, textareaFieldClassName } from '@/components/ui/fieldStyles'
 import type { GymCheckInRecord } from '@/features/evolution/types/evolution.types'
@@ -24,7 +23,7 @@ export default function GymCheckInCard({ checkIns }: { checkIns: GymCheckInRecor
         <div>
           <p className="text-sm font-medium text-cyan-100/80">Check-in Academia</p>
           <h2 className="mt-1 text-xl font-bold text-white">Registrar treino</h2>
-          <p className="mt-2 text-sm leading-6 text-zinc-400">Interface mockada para data, horário, treino, observação e foto.</p>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">Prévia preparada para data, horário, treino, observação e foto.</p>
         </div>
         <div className="grid h-11 w-11 place-items-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-100">
           <Dumbbell className="h-5 w-5" />
@@ -63,9 +62,9 @@ export default function GymCheckInCard({ checkIns }: { checkIns: GymCheckInRecor
         <PhotoAttachField label="Foto do treino" />
       </div>
 
-      <Button type="button" className="mt-4 w-full" variant="secondary">
-        Salvar check-in mockado
-      </Button>
+      <p className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm leading-5 text-zinc-400">
+        Use o formulário real de check-in acima para salvar uma entrada.
+      </p>
     </Card>
   )
 }

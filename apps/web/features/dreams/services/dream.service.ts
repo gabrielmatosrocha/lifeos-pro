@@ -1,4 +1,4 @@
-import type { DreamEngineMock } from '@/features/dreams/types/dream.types'
+﻿import type { DreamEngineMock } from '@/features/dreams/types/dream.types'
 
 export function getDreamEngineMock(): DreamEngineMock {
   return {
@@ -6,7 +6,7 @@ export function getDreamEngineMock(): DreamEngineMock {
     insight: {
       title: 'Seu sonho já tem forma',
       message: 'Você está a 3 ações de transformar esse sonho em uma meta real.',
-      signal: 'Dream Engine mockado, pronto para IA, hábitos, calendário e Supabase.',
+      signal: 'Dream Engine preparado para IA, hábitos, calendário e Supabase.',
     },
     dreams: [
       {
